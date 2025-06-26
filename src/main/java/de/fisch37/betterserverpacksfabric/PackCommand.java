@@ -4,6 +4,8 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -29,6 +31,9 @@ public class PackCommand {
             .append(Text.literal("[").formatted(Formatting.YELLOW))
             .append(Text.literal("BSP").formatted(Formatting.AQUA))
             .append(Text.literal("] ").formatted(Formatting.YELLOW));
+    private static final SimpleCommandExceptionType INVALID_URI_EXCEPTION = new SimpleCommandExceptionType(
+            Text.translatableWithFallback("bsp.commands.exc.invalid_uri", "The pack URI is malformed. You can try fixing this in the config or just use /pack set <url> again")
+    );
 
     private static LiteralArgumentBuilder<ServerCommandSource> makeCommand(CommandRegistryAccess registryAccess) {
         return literal("pack")
@@ -238,8 +243,14 @@ public class PackCommand {
         return 1;
     }
 
-    private static int showInfo(CommandContext<ServerCommandSource> context) {
+    private static int showInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         String url = Main.config.url.get();
+        URI uriObj;
+        try {
+            uriObj = new URI(url);
+        } catch (URISyntaxException e) {
+            throw INVALID_URI_EXCEPTION.create();
+        }
         boolean required = Main.config.required.get();
         Optional<Text> prompt = Main.config.getPrompt(context.getSource().getRegistryManager());
         if (!url.isEmpty()) {
@@ -247,9 +258,7 @@ public class PackCommand {
                             MSG_PREFIX.copy()
                                     .append("Pack URL: ")
                                     .append(Text.literal(url)
-                                            .fillStyle(Style.EMPTY
-                                                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url))
-                                            )
+                                            .fillStyle(Style.EMPTY.withClickEvent(new ClickEvent.OpenUrl(uriObj)))
                                             .formatted(Formatting.GREEN)
                                             .formatted(Formatting.UNDERLINE)
                                     )
