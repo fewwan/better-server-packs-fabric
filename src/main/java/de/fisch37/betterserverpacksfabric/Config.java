@@ -1,11 +1,8 @@
 package de.fisch37.betterserverpacksfabric;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.DynamicOps;
-import com.mojang.serialization.JsonOps;
 import de.maxhenkel.configbuilder.ConfigBuilder;
 import de.maxhenkel.configbuilder.entry.ConfigEntry;
 import net.minecraft.nbt.NbtElement;
@@ -78,6 +75,7 @@ public class Config {
     private static String textToSnbt(Text text, RegistryWrapper.WrapperLookup registries)
             throws IllegalStateException {
         var element = TextCodecs.CODEC.encodeStart(registries.getOps(OPS), text).getOrThrow();
-        return GSON.toJson(element);
+        // This just feels wrong, but it seems this is the correct way.
+        return element.toString();
     }
 }
