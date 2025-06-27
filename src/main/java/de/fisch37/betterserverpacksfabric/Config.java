@@ -40,7 +40,6 @@ public class Config {
             return Optional.empty();
         } else {
             try {
-                // This nesting is a bit scuffed, but I think it's the best solution
                 return Optional.of(textFromSnbt(promptString, registries));
             } catch (Exception e) {
                 // Need to use concatenation to log the exception
@@ -64,7 +63,6 @@ public class Config {
     private static final DynamicOps<NbtElement> OPS = NbtOps.INSTANCE;
     private static final Parser<NbtElement> PARSER = SnbtParsing.createParser(OPS);
 
-    private static final Gson GSON = new GsonBuilder().create();
     private static Text textFromSnbt(String snbt, @Nullable RegistryWrapper.WrapperLookup registries)
             throws CommandSyntaxException {
         final var reader = new StringReader(snbt);
