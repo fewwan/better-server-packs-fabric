@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.DynamicOps;
 import de.maxhenkel.configbuilder.ConfigBuilder;
 import de.maxhenkel.configbuilder.entry.ConfigEntry;
+import net.minecraft.command.argument.TextArgumentType;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.SnbtParsing;
@@ -68,7 +69,7 @@ public class Config {
             throws CommandSyntaxException {
         final var reader = new StringReader(snbt);
         var ops = registries == null ? OPS : registries.getOps(OPS);
-        return PARSER.withDecoding(ops, PARSER, TextCodecs.CODEC, null)
+        return PARSER.withDecoding(ops, PARSER, TextCodecs.CODEC, TextArgumentType.INVALID_COMPONENT_EXCEPTION)
                 .parse(reader);
     }
 
