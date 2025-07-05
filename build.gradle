@@ -44,8 +44,9 @@ processResources {
 
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
-                "minecraft_version": project.minecraft_version,
-                "loader_version": project.loader_version
+                "loader_version": project.loader_version,
+                "lowest_mc_version": project.lowest_mc_version,
+                "next_incompatible_mc_version": project.next_incompatible_mc_version
     }
 }
 

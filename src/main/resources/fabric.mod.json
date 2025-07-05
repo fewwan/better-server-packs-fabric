@@ -18,6 +18,6 @@
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric": "*",
-    "minecraft": "~${minecraft_version}"
+    "minecraft": ">=${lowest_mc_version} <${next_incompatible_mc_version}"
   }
 }
