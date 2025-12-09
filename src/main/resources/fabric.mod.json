@@ -16,7 +16,7 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=${loader_version}",
+    "fabricloader": "*",
     "fabric": "*",
     "minecraft": ">=${lowest_mc_version} <${next_incompatible_mc_version}"
   }

@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.TextArgumentType;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Style;
@@ -37,7 +38,7 @@ public class PackCommand {
 
     private static LiteralArgumentBuilder<ServerCommandSource> makeCommand(CommandRegistryAccess registryAccess) {
         return literal("pack")
-                .requires(required -> required.hasPermissionLevel(3))
+                .requires(CommandManager.requirePermissionLevel(ADMINS_CHECK))
                 .then(literal("set")
                         .executes(PackCommand::disablePack)
                         .then(argument("url", string())
