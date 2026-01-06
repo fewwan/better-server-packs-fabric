@@ -108,7 +108,7 @@ public class Main implements DedicatedServerModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             LOGGER.info("Updating pack hash...");
             updateHash()
-                    .handle((didReload, exc) -> {
+                    .whenComplete((didReload, exc) -> {
                         if (exc != null) {
                             LOGGER.error("Failed to update pack hash", exc);
                         } else {
@@ -118,11 +118,18 @@ public class Main implements DedicatedServerModInitializer {
                                 LOGGER.info("No pack is set. Cannot hash it");
                             }
                         }
-                        return null;
                     });
         });
     }
 
+    /**
+     *
+     * @return A future to the running updating process.
+     *  succeeds with {@code false} if no pack url is set,
+     *  {@code true} if the pack was updated,
+     *  or with an exception, if there was an error.
+     * @throws IllegalStateException if the URL is malformed
+     */
     public static CompletableFuture<@NotNull Boolean> updateHash() throws IllegalStateException {
         final var future = new CompletableFuture<Boolean>();
         if (config.url.get().isEmpty()){

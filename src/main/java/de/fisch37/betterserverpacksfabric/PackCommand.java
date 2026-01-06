@@ -93,10 +93,10 @@ public class PackCommand {
                 ,
                 true
         );
-        Main.updateHash().thenAccept(result -> {
+        Main.updateHash().whenComplete((result, exc) -> {
             // Let's all hope that this doesn't cause threading issues :+1:
-            if (result == null) {
-                // Error
+            if (exc != null) {
+                Main.LOGGER.error("Failed to update hash", exc);
                 source.sendFeedback(() -> MSG_PREFIX.copy()
                                 .append(Text.literal(
                                         "Failed to update hash."
