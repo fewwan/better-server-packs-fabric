@@ -39,10 +39,7 @@ public class Main implements DedicatedServerModInitializer {
                 .build();
         readHash();
         if (config.rehashOnStart.get()) {
-            ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-                updateHash();
-                config.rehashOnStart.set(false).save();
-            });
+            doRehashOnStart();
         }
 
         PackCommand.register();
@@ -105,6 +102,10 @@ public class Main implements DedicatedServerModInitializer {
         }
 
         hash = readHexBinary(newHashHex);
+    }
+
+    private static void doRehashOnStart() {
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> updateHash());
     }
 
     // Some might say the ternary boolean is the product of satan
