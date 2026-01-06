@@ -105,12 +105,25 @@ public class Main implements DedicatedServerModInitializer {
     }
 
     private static void doRehashOnStart() {
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> updateHash());
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            LOGGER.info("Updating pack hash...");
+            updateHash()
+                    .handle((didReload, exc) -> {
+                        if (exc != null) {
+                            LOGGER.error("Failed to update pack hash", exc);
+                        } else {
+                            if (didReload) {
+                                LOGGER.info("Pack hash updated!");
+                            } else {
+                                LOGGER.info("No pack is set. Cannot hash it");
+                            }
+                        }
+                        return null;
+                    });
+        });
     }
 
-    // Some might say the ternary boolean is the product of satan
-    // I think it's a perfectly valid option >:)
-    public static CompletableFuture<@Nullable Boolean> updateHash() throws IllegalStateException {
+    public static CompletableFuture<@NotNull Boolean> updateHash() throws IllegalStateException {
         final var future = new CompletableFuture<Boolean>();
         if (config.url.get().isEmpty()){
             hash = null;
@@ -128,26 +141,30 @@ public class Main implements DedicatedServerModInitializer {
         // Ooo, threading in Minecraft code!
         // It's fine though, as long as we don't touch any of Minecraft's stuff
         new Thread(() -> {
-            MessageDigest digest;
+            // Wonderfully huge and broad exception handler
+            // (passes the exception into the CompletableFuture)
             try {
-                digest = MessageDigest.getInstance("SHA-1");
-            } catch (NoSuchAlgorithmException e) {
-                // SHA-1 is required per java docs
-                LOGGER.error("JVM does not have SHA-1 hashing... WTF?");
-                future.complete(null);
-                return;
-            }
-            try (InputStream data = url.openStream()) {
-                new DigestInputStream(data, digest).readAllBytes();
-            } catch (IOException e) {
-                LOGGER.error("Failed to load resource pack at {}", url);
-                future.complete(null);
-                return;
-            }
-            hash = digest.digest();
-            Main.saveHash();
+                MessageDigest digest;
+                try {
+                    digest = MessageDigest.getInstance("SHA-1");
+                } catch (NoSuchAlgorithmException e) {
+                    // SHA-1 is required per java docs
+                    LOGGER.error("JVM does not have SHA-1 hashing... WTF?");
+                    throw e;
+                }
+                try (InputStream data = url.openStream()) {
+                    new DigestInputStream(data, digest).readAllBytes();
+                } catch (IOException e) {
+                    LOGGER.error("Failed to load resource pack at {}", url);
+                    throw e;
+                }
+                hash = digest.digest();
+                Main.saveHash();
 
-            future.complete(true);
+                future.complete(true);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
         }, "BSPReloadThread").start();
         return future;
     }
