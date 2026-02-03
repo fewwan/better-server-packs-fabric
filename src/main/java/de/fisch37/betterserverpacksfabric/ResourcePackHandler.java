@@ -2,8 +2,6 @@ package de.fisch37.betterserverpacksfabric;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.network.packet.s2c.common.ResourcePackSendS2CPacket;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 
@@ -29,12 +27,6 @@ public class ResourcePackHandler {
         }
     }
 
-    public static int pushTo(MinecraftServer server) {
-        return pushTo(server.getPlayerManager());
-    }
-    public static int pushTo(PlayerManager players) {
-        return pushTo(players.getPlayerList());
-    }
     public static int pushTo(Collection<ServerPlayerEntity> players) {
         for (ServerPlayerEntity player : players) push(player.networkHandler);
         return players.size();

@@ -12,6 +12,7 @@ import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.TextArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
@@ -21,6 +22,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -36,26 +39,42 @@ public class PackCommand {
             Text.translatableWithFallback("bsp.commands.exc.invalid_uri", "The pack URI is malformed. You can try fixing this in the config or just use /pack set <url> again")
     );
 
+    private static Collection<ServerPlayerEntity> allPlayers(CommandContext<ServerCommandSource> context) {
+        return context.getSource().getServer().getPlayerManager().getPlayerList();
+    }
+
     private static LiteralArgumentBuilder<ServerCommandSource> makeCommand(CommandRegistryAccess registryAccess) {
         return literal("pack")
                 .requires(CommandManager.requirePermissionLevel(ADMINS_CHECK))
                 .then(literal("set")
                         .executes(PackCommand::disablePack)
                         .then(argument("url", string())
-                                .executes(context -> PackCommand.setPack(context, false))
+                                .executes(PackCommand::setPack)
                                 .then(literal("push")
-                                        .executes(context -> PackCommand.setPack(context, true))
+                                        .executes(context -> PackCommand.setPack(context, allPlayers(context)))
+                                        .then(argument("players", EntityArgumentType.players())
+                                                .executes(context -> PackCommand.setPack(
+                                                        context,
+                                                        EntityArgumentType.getPlayers(context, "players")
+                                                ))
+                                        )
                                 )
                         )
                 )
                 .then(literal("reload")
-                        .executes(context -> PackCommand.reloadPack(context, false))
+                        .executes(PackCommand::reloadPack)
                         .then(literal("push")
-                                .executes(context -> PackCommand.reloadPack(context, true))
+                                .executes(context -> PackCommand.reloadPack(context, allPlayers(context)))
+                                .then(argument("players", EntityArgumentType.players())
+                                        .executes(context -> PackCommand.reloadPack(
+                                                context,
+                                                EntityArgumentType.getPlayers(context, "players")
+                                        ))
+                                )
                         )
                 )
                 .then(literal("push")
-                        .executes(context -> ResourcePackHandler.pushTo(context.getSource().getServer()))
+                        .executes(context -> ResourcePackHandler.pushTo(allPlayers(context)))
                         .then(argument("players", EntityArgumentType.players())
                                 .executes(context -> ResourcePackHandler.pushTo(
                                         EntityArgumentType.getPlayers(context, "players")
@@ -87,7 +106,11 @@ public class PackCommand {
         );
     }
 
-    private static void updateHashWithContext(ServerCommandSource source, boolean pushAfterSet) {
+    private static void updateHashWithContext(ServerCommandSource source) {
+        updateHashWithContext(source, Collections.emptyList());
+    }
+
+    private static void updateHashWithContext(ServerCommandSource source, Collection<ServerPlayerEntity> players) {
         source.sendFeedback(() -> MSG_PREFIX.copy()
                 .append("Updating pack hash...")
                 ,
@@ -114,12 +137,12 @@ public class PackCommand {
                         ,
                         true);
 
-                if (pushAfterSet) {
+                if (!players.isEmpty()) {
                     source.sendFeedback(() -> MSG_PREFIX.copy()
                                     .append("Pushing to players...")
                             ,
                             true);
-                    ResourcePackHandler.pushTo(source.getServer());
+                    ResourcePackHandler.pushTo(players);
                 }
             } else {
                 // Hash removed (no pack selected)
@@ -133,7 +156,11 @@ public class PackCommand {
         });
     }
 
-    private static int setPack(CommandContext<ServerCommandSource> context, boolean pushAfterSet) {
+    private static int setPack(CommandContext<ServerCommandSource> context) {
+        return setPack(context, Collections.emptyList());
+    }
+
+    private static int setPack(CommandContext<ServerCommandSource> context, Collection<ServerPlayerEntity> players) {
         final Supplier<Text> INVALID_URL_ERROR = (
                 () -> MSG_PREFIX.copy()
                 .append(Text.literal("The text supplied is not a valid URL")
@@ -161,18 +188,22 @@ public class PackCommand {
                 ,
                 true
         );
-        updateHashWithContext(source, pushAfterSet);
+        updateHashWithContext(source, players);
         return 1;
     }
 
     private static int disablePack(CommandContext<ServerCommandSource> context) {
         Main.config.url.set("").save();
-        updateHashWithContext(context.getSource(), false);
+        updateHashWithContext(context.getSource());
         return 1;
     }
 
-    private static int reloadPack(CommandContext<ServerCommandSource> context, boolean pushAfterReload) {
-        updateHashWithContext(context.getSource(), pushAfterReload);
+    private static int reloadPack(CommandContext<ServerCommandSource> context) {
+        return reloadPack(context, Collections.emptyList());
+    }
+
+    private static int reloadPack(CommandContext<ServerCommandSource> context, Collection<ServerPlayerEntity> players) {
+        updateHashWithContext(context.getSource(), players);
         return 1;
     }
 
